@@ -1,0 +1,1 @@
+[{"model": "isafonda.project", "fields": {"transfer_send_status": true, "timeout": 10.0, "url": "http://douentza.yeleman.com/fondasms", "transfer_sms": true, "transfer_call": true, "transfer_mms": false, "transfer_sent": false, "transfer_outgoing": true, "transfer_device_status": false, "name": "Douentza Hotline"}, "pk": "douentza"}]
