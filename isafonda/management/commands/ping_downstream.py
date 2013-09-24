@@ -8,8 +8,9 @@ from __future__ import (unicode_literals, absolute_import,
 from django.core.management.base import BaseCommand
 from optparse import make_option
 
-from isafonda.models import Project, conn_status, StalledRequest
+from isafonda.models import Project, StalledRequest
 from isafonda.utils import test_connection
+from isafonda.connection import conn_status
 
 
 class Command(BaseCommand):
@@ -53,4 +54,3 @@ class Command(BaseCommand):
             sreq.retry_downstream()
 
         print("Updates completed.")
-
