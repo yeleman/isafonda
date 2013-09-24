@@ -15,7 +15,8 @@ from django.views.decorators.http import require_POST
 from django.shortcuts import get_object_or_404
 
 from isafonda.models import (Project, FondaSMSRequest,
-                             StalledRequest, conn_status)
+                             StalledRequest)
+from isafonda.connection import conn_status
 
 
 def home(request):
