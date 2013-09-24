@@ -16,6 +16,7 @@ from django.shortcuts import get_object_or_404
 
 from isafonda.models import (Project, FondaSMSRequest,
                              StalledRequest)
+from isafonda.utils import should_forward
 from isafonda.connection import conn_status
 
 
@@ -38,7 +39,7 @@ def fondasms_handler(request, project_slug):
 
     from pprint import pprint as pp ; pp(fondareq)
 
-    if not project.should_forward(fondareq):
+    if not should_forward(project, fondareq):
         return build_response_with(pending_upstream_messages(project))
 
     try:

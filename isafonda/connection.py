@@ -7,7 +7,6 @@ from __future__ import (unicode_literals, absolute_import,
 import datetime
 
 from isafonda.models import Project
-from isafonda.utils import test_connection
 
 
 class ConnectionStatus(object):
@@ -42,6 +41,7 @@ class ConnectionStatus(object):
         self._set(project, 'last_update', now)
 
     def update_from_network(self, project):
+        from isafonda.utils import test_connection
         nstatus = self.WORKING if test_connection(project.url, project.timeout) \
                                else self.NOT_WORKING
         self.update(project, nstatus)

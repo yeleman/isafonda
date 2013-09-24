@@ -125,32 +125,6 @@ class Project(models.Model):
     def __str__(self):
         return self.name
 
-    def should_forward(self, request):
-        from isafonda.connection import conn_status
-        matrix = {
-            'transfer_outgoing': 'is_outgoing',
-            'transfer_sms': 'is_sms',
-            'transfer_mms': 'is_mms',
-            'transfer_call': 'is_call',
-            'transfer_send_status': 'is_send_status',
-            'transfer_device_status': 'is_device_status',
-            'transfer_sent': 'is_forwarded_sent'
-        }
-
-        if request.is_test:
-            return False
-
-        # special case for outgoing
-        # we don't forward if there's alredy one pending
-        if request.is_outgoing and self.transfer_outgoing and not conn_status.is_working(self):
-            return not StalledRequest.objects.filter(status=StalledRequest.PENDING_DOWNSTREAM).count()
-
-        for allowance, state in matrix.items():
-            if getattr(self, allowance, False) and getattr(request, state, False):
-                return True
-
-        return False
-
 
 @implements_to_string
 class StalledRequest(models.Model):

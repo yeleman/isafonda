@@ -56,3 +56,32 @@ def test_connection(url, timeout):
     except RequestException:
         pass
     return False
+
+
+def should_forward(project, request):
+    from isafonda.models import StalledRequest
+    from isafonda.connection import conn_status
+
+    matrix = {
+        'transfer_outgoing': 'is_outgoing',
+        'transfer_sms': 'is_sms',
+        'transfer_mms': 'is_mms',
+        'transfer_call': 'is_call',
+        'transfer_send_status': 'is_send_status',
+        'transfer_device_status': 'is_device_status',
+        'transfer_sent': 'is_forwarded_sent'
+    }
+
+    if request.is_test:
+        return False
+
+    # special case for outgoing
+    # we don't forward if there's alredy one pending
+    if request.is_outgoing and project.transfer_outgoing and not conn_status.is_working(project):
+        return not StalledRequest.objects.filter(status=StalledRequest.PENDING_DOWNSTREAM).count()
+
+    for allowance, state in matrix.items():
+        if getattr(project, allowance, False) and getattr(request, state, False):
+            return True
+
+    return False
