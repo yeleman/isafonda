@@ -15,6 +15,7 @@ from requests.exceptions import RequestException
 
 from isafonda._compat import implements_to_string
 from isafonda.utils import datetime_from_timestamp
+from isafonda.connection import conn_status
 
 
 class FondaSMSRequest(dict):
@@ -126,8 +127,6 @@ class Project(models.Model):
         return self.name
 
     def should_forward(self, request):
-        from isafonda.utils import conn_status
-
         matrix = {
             'transfer_outgoing': 'is_outgoing',
             'transfer_sms': 'is_sms',
