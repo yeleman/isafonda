@@ -37,9 +37,14 @@ def fondasms_handler(request, project_slug):
 
     fondareq = FondaSMSRequest.from_post(request.POST)
 
+    automatic_reply = get_automatic_reply(fondareq, project)
+
     if not should_forward(project, fondareq):
-        return build_response_with(pending_upstream_messages(
-            project, phone_number=fondareq.phone_number),
+        return build_response_with(
+            pending_upstream_messages(
+                project,
+                phone_number=fondareq.phone_number,
+                auto_reply=automatic_reply),
             phone_number=fondareq.phone_number)
 
     try:
@@ -50,22 +55,32 @@ def fondasms_handler(request, project_slug):
     except RequestException:
         conn_status.update(project, conn_status.NOT_WORKING)
         cache_request_locally(request, project)
-        return build_response_with(pending_upstream_messages(
-            project, phone_number=fondareq.phone_number),
+        return build_response_with(
+            pending_upstream_messages(
+                project,
+                phone_number=fondareq.phone_number,
+                auto_reply=automatic_reply),
             phone_number=fondareq.phone_number)
 
     conn_status.update(project, conn_status.WORKING)
 
-    return merge_response_with(req, pending_upstream_messages(
-        project, phone_number=fondareq.phone_number))
+    return merge_response_with(
+        req,
+        pending_upstream_messages(
+            project,
+            phone_number=fondareq.phone_number,
+            auto_reply=automatic_reply))
 
 
-def pending_upstream_messages(project, max_items=None, phone_number=None):
+def pending_upstream_messages(project,
+                              max_items=None, phone_number=None,
+                              auto_reply=None):
     # list of messages that were stalled in this gateway (fetched from server)
     # and not yet sent to upstream (phone)
+    auto = [auto_reply] if auto_reply else []
     return StalledRequest.get_pending_upstream(project=project,
                                                max_items=max_items,
-                                               phone_number=phone_number)
+                                               phone_number=phone_number) + auto
 
 
 def build_response_with(events=[], phone_number=None):
@@ -101,3 +116,16 @@ def can_overload_response(response):
 
 def cache_request_locally(request, project):
     StalledRequest.from_upstream(project=project, request=request)
+
+
+def get_automatic_reply(request, project):
+    if not project.automatic_reply or project.automatic_reply_text is None:
+        return None
+
+    if not request.is_incoming:
+        return None
+
+    return {'to': request.phone_number,
+            'message': project.automatic_reply_text}
+
+

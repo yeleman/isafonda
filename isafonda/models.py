@@ -75,6 +75,10 @@ class FondaSMSRequest(dict):
         return self.get('action') == self.OUTGOING
 
     @property
+    def is_incoming(self):
+        return self.get('action') == self.INCOMING
+
+    @property
     def is_sms(self):
         return self.get('action') == self.INCOMING \
             and self.get('message_type') == self.SMS
@@ -109,6 +113,10 @@ class Project(models.Model):
     name = models.CharField(max_length=100)
     url = models.URLField()
     reply_same_phone = models.BooleanField()
+    automatic_reply = models.BooleanField(
+        help_text="When active, reply to every incoming request.")
+    automatic_reply_text = models.CharField(
+        max_length=380, null=True, blank=None)
     timeout = models.FloatField(default=10)
     max_items = models.PositiveIntegerField(
         default=settings.DEFAULT_MAX_ITEMS_TO_UPSTREAM)
