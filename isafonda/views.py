@@ -39,7 +39,8 @@ def fondasms_handler(request, project_slug):
 
     if not should_forward(project, fondareq):
         return build_response_with(pending_upstream_messages(
-            project, phone_number=fondareq.phone_number))
+            project, phone_number=fondareq.phone_number),
+            phone_number=fondareq.phone_number)
 
     try:
         req = requests.post(project.url,
@@ -50,7 +51,8 @@ def fondasms_handler(request, project_slug):
         conn_status.update(project, conn_status.NOT_WORKING)
         cache_request_locally(request, project)
         return build_response_with(pending_upstream_messages(
-            project, phone_number=fondareq.phone_number))
+            project, phone_number=fondareq.phone_number),
+            phone_number=fondareq.phone_number)
 
     conn_status.update(project, conn_status.WORKING)
 
@@ -66,8 +68,13 @@ def pending_upstream_messages(project, max_items=None, phone_number=None):
                                                phone_number=phone_number)
 
 
-def build_response_with(events=[]):
-    response = {"events": events}
+def build_response_with(events=[], phone_number=None):
+    response = {'events': [],
+                'phone_number': phone_number}
+    if len(events):
+        if not len(response['events']):
+            response['events'].append({'event': 'send', 'messages': []})
+        response['events'][0]['messages'] += events
     return HttpResponse(json.dumps(response),
                         mimetype='application/json')
 
@@ -78,7 +85,10 @@ def merge_response_with(response, events=[]):
     if not isinstance(response_obj.get('events'), list):
         response_obj['events'] = []
 
-    response_obj['events'] += events
+    if len(events):
+        if not len(response_obj['events']):
+            response_obj['events'].append({'event': 'send', 'messages': []})
+        response_obj['events'][0]['messages'] += events
 
     return HttpResponse(json.dumps(response_obj),
                         mimetype='application/json')

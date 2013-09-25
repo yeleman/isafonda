@@ -60,7 +60,7 @@ class FondaSMSRequest(dict):
 
     @property
     def phone_number(self):
-        return self.get('phone_number').strip() or None
+        return self.get('phone_number', '').strip() or None
 
     @property
     def identity(self):
@@ -214,7 +214,7 @@ class StalledRequest(models.Model):
 
         try:
             response_obj = json.loads(req.text)
-            events = response_obj['events']
+            events = response_obj['events'][0]['messages']
             phone_number = response_obj.get('phone_number')
         except:
             return
