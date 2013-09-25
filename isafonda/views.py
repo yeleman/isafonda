@@ -37,10 +37,9 @@ def fondasms_handler(request, project_slug):
 
     fondareq = FondaSMSRequest.from_post(request.POST)
 
-    from pprint import pprint as pp ; pp(fondareq)
-
     if not should_forward(project, fondareq):
-        return build_response_with(pending_upstream_messages(project))
+        return build_response_with(pending_upstream_messages(
+            project, phone_number=fondareq.phone_number))
 
     try:
         req = requests.post(project.url,
@@ -50,18 +49,21 @@ def fondasms_handler(request, project_slug):
     except RequestException:
         conn_status.update(project, conn_status.NOT_WORKING)
         cache_request_locally(request, project)
-        return build_response_with(pending_upstream_messages(project))
+        return build_response_with(pending_upstream_messages(
+            project, phone_number=fondareq.phone_number))
 
     conn_status.update(project, conn_status.WORKING)
 
-    return merge_response_with(req, pending_upstream_messages(project))
+    return merge_response_with(req, pending_upstream_messages(
+        project, phone_number=fondareq.phone_number))
 
 
-def pending_upstream_messages(project, max_items=None):
+def pending_upstream_messages(project, max_items=None, phone_number=None):
     # list of messages that were stalled in this gateway (fetched from server)
     # and not yet sent to upstream (phone)
     return StalledRequest.get_pending_upstream(project=project,
-                                               max_items=max_items)
+                                               max_items=max_items,
+                                               phone_number=phone_number)
 
 
 def build_response_with(events=[]):

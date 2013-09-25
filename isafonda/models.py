@@ -59,6 +59,10 @@ class FondaSMSRequest(dict):
             return datetime_from_timestamp(self.get('timestamp'))
 
     @property
+    def phone_number(self):
+        return self.get('phone_number').strip() or None
+
+    @property
     def identity(self):
         return self.get('from')
 
@@ -104,6 +108,7 @@ class Project(models.Model):
     slug = models.CharField(max_length=30, primary_key=True)
     name = models.CharField(max_length=100)
     url = models.URLField()
+    reply_same_phone = models.BooleanField()
     timeout = models.FloatField(default=10)
     max_items = models.PositiveIntegerField(
         default=settings.DEFAULT_MAX_ITEMS_TO_UPSTREAM)
@@ -152,6 +157,7 @@ class StalledRequest(models.Model):
     created_on = models.DateTimeField(auto_now_add=True)
     originated_on = models.DateTimeField()
     altered_on = models.DateTimeField(auto_now=True)
+    phone_number = models.CharField(max_length=50, null=True, blank=True)
     payload = PickledObjectField(null=True, blank=True)
 
     def __str__(self):
@@ -164,14 +170,24 @@ class StalledRequest(models.Model):
         return cls.objects.create(project=project,
                                   status=cls.PENDING_DOWNSTREAM,
                                   originated_on=fondareq.event_date or fondareq.date,
+                                  phone_number=fondareq.phone_number,
                                   payload=fondareq)
 
     @classmethod
-    def get_pending_upstream(cls, project, max_items=None):
+    def get_pending_upstream(cls, project, max_items=None, phone_number=None):
         max_items = project.max_items if max_items is None else max_items
         going_items = []
         remaining = max_items - len(going_items)
-        for req in cls.objects.filter(status=cls.PENDING_UPSTREAM).all():
+        base_filter = cls.objects.filter(status=cls.PENDING_UPSTREAM)
+        none_list = list(base_filter.filter(phone_number__isnull=True))
+
+        if project.reply_same_phone:
+            all_reqs = list(set(none_list
+                                + list(base_filter.filter(phone_number=phone_number))))
+        else:
+            all_reqs = none_list
+
+        for req in all_reqs:
             if len(req.payload) <= remaining:
                 going_items += req.payload
                 req.status = cls.SENT_UPSTREAM
@@ -199,6 +215,7 @@ class StalledRequest(models.Model):
         try:
             response_obj = json.loads(req.text)
             events = response_obj['events']
+            phone_number = response_obj.get('phone_number')
         except:
             return
 
@@ -207,14 +224,15 @@ class StalledRequest(models.Model):
             return
 
         # we do have some replies to forward upstream
-        self.from_downstream(self.project, events)
+        self.from_downstream(self.project, events, phone_number)
 
     @classmethod
-    def from_downstream(cls, project, events):
+    def from_downstream(cls, project, events, phone_number=None):
         return cls.objects.create(
             project=project,
             status=cls.PENDING_UPSTREAM,
             originated_on=datetime.datetime.now(),
+            phone_number=phone_number,
             payload=events)
 
 
