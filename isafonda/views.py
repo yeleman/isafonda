@@ -122,10 +122,10 @@ def get_automatic_reply(request, project):
     if not project.automatic_reply or project.automatic_reply_text is None:
         return None
 
-    if not request.is_incoming:
+    if not request.is_incoming or request.identity is None:
         return None
 
-    return {'to': request.phone_number,
+    return {'to': request.identity,
             'message': project.automatic_reply_text}
 
 
