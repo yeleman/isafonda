@@ -9,5 +9,8 @@ urlpatterns = patterns('',
     url(r'^(?P<project_slug>[a-zA-Z0-9\_\-\.]+)/?$',
         'isafonda.views.fondasms_handler',
         name='fondasms_project'),
+    url(r'^(?P<project_slug>[a-zA-Z0-9\_\-\.]+)/add/?$',
+        'isafonda.views.external_events_handler',
+        name='fondasms_add'),
     url(r'^$', 'isafonda.views.home', name='home'),
 )

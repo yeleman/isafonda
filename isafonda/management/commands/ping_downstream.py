@@ -14,7 +14,7 @@ from isafonda.connection import conn_status
 
 
 class Command(BaseCommand):
-    help = "Ping the upstream server and clears pending messages if reachable"
+    help = "Ping the downstream server and clears pending messages if reachable"
     option_list = BaseCommand.option_list + (
         make_option('-p', '--project',
                     action="store",

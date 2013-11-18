@@ -116,7 +116,7 @@ class Project(models.Model):
     automatic_reply = models.BooleanField(
         help_text="When active, reply to every incoming request.")
     automatic_reply_text = models.CharField(
-        max_length=380, null=True, blank=None)
+        max_length=380, null=True, blank=True)
     timeout = models.FloatField(default=10)
     max_items = models.PositiveIntegerField(
         default=settings.DEFAULT_MAX_ITEMS_TO_UPSTREAM)
@@ -134,6 +134,14 @@ class Project(models.Model):
         help_text="Transfer device (battery, network) status to server.")
     transfer_sent = models.BooleanField(
         help_text="Transfer non-app (manual) SMS sent from phone to server.")
+    upstream_url = models.URLField(
+        help_text="URL of the closer-to-device equipment/isafonda.",
+        null=True, blank=True)
+    transfer_upstream = models.BooleanField(
+        help_text="Transfer events from downstream gateway to upstream.")
+    transfer_upstream_secret = models.CharField(
+        max_length=250, null=True, blank=True,
+        help_text="A string to protect unauthorized people from sending.")
 
     def __str__(self):
         return self.name

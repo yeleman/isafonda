@@ -9,7 +9,7 @@ import json
 import requests
 from requests.exceptions import RequestException
 
-from django.http import HttpResponse
+from django.http import HttpResponse, Http404
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from django.shortcuts import get_object_or_404
@@ -129,3 +129,39 @@ def get_automatic_reply(request, project):
             'message': project.automatic_reply_text}
 
 
+@csrf_exempt
+@require_POST
+def external_events_handler(request, project_slug):
+    failed_to_send = False
+    print("project: {}".format(project_slug))
+    project = get_object_or_404(Project, slug=project_slug)
+
+    # if not project.transfer_upstream:
+    #     return Http404()
+
+    secret = request.GET.get('secret', '').strip()
+    phone_number = request.GET.get('phone_number', None)
+    events = json.loads(request.read())
+
+    if project.transfer_upstream_secret \
+        and project.transfer_upstream_secret != secret:
+        return HttpResponse("Access Forbidden", status=403)
+
+    if project.transfer_upstream:
+        try:
+            req = requests.post(project.upstream_url,
+                                data=json.dumps(events),
+                                timeout=project.timeout)
+            req.raise_for_status()
+        except RequestException:
+            failed_to_send = True
+
+    if failed_to_send or not project.transfer_upstream:
+        StalledRequest.from_downstream(project=project,
+                                       events=events,
+                                       phone_number=phone_number)
+        return HttpResponse("Request cached for later delivery.",
+                            status=201)
+
+    return HttpResponse("Request properly forwarded.",
+                        status=200)
