@@ -186,7 +186,7 @@ class StalledRequest(models.Model):
         return cls.objects.create(project=project,
                                   status=cls.PENDING_DOWNSTREAM,
                                   originated_on=fondareq.event_date or fondareq.date,
-                                  phone_number=fondareq.phone_number,
+                                  phone_number=fondareq.phone_number or None,
                                   payload=fondareq)
 
     @classmethod
@@ -198,8 +198,7 @@ class StalledRequest(models.Model):
         none_list = list(base_filter.filter(phone_number__isnull=True))
 
         if project.reply_same_phone:
-            all_reqs = list(set(none_list
-                                + list(base_filter.filter(phone_number=phone_number))))
+            all_reqs = list(set(none_list + list(base_filter.filter(phone_number=phone_number))))
         else:
             all_reqs = none_list
 
@@ -231,7 +230,7 @@ class StalledRequest(models.Model):
         try:
             response_obj = json.loads(req.text)
             events = response_obj['events'][0]['messages']
-            phone_number = response_obj.get('phone_number')
+            phone_number = response_obj.get('phone_number') or None
         except:
             return
 
@@ -248,7 +247,7 @@ class StalledRequest(models.Model):
             project=project,
             status=cls.PENDING_UPSTREAM,
             originated_on=datetime.datetime.now(),
-            phone_number=phone_number,
+            phone_number=phone_number or None,
             payload=events)
 
 
