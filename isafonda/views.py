@@ -5,11 +5,12 @@
 from __future__ import (unicode_literals, absolute_import,
                         division, print_function)
 import json
+import re
 
 import requests
 from requests.exceptions import RequestException
 
-from django.http import HttpResponse, Http404
+from django.http import HttpResponse  #, Http404
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from django.shortcuts import get_object_or_404
@@ -149,7 +150,7 @@ def external_events_handler(request, project_slug):
 
     if project.transfer_upstream:
         if phone_number is not None:
-            params = {'phone_number': phone_number}
+            params = {'phone_number': re.sub(r'^223', '', phone_number)}
         else:
             params = {}
         try:
