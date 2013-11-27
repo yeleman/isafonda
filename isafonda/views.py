@@ -17,7 +17,7 @@ from django.shortcuts import get_object_or_404
 
 from isafonda.models import (Project, FondaSMSRequest,
                              StalledRequest)
-from isafonda.utils import should_forward
+from isafonda.utils import should_forward, has_pending_outgoing
 from isafonda.connection import conn_status
 
 
@@ -55,7 +55,8 @@ def fondasms_handler(request, project_slug):
         req.raise_for_status()
     except RequestException:
         conn_status.update(project, conn_status.NOT_WORKING)
-        cache_request_locally(request, project)
+        if not fondareq.is_outgoing or not has_pending_outgoing(project):
+            cache_request_locally(request, project)
         return build_response_with(
             pending_upstream_messages(
                 project,

@@ -78,10 +78,16 @@ def should_forward(project, request):
     # special case for outgoing
     # we don't forward if there's alredy one pending
     if request.is_outgoing and project.transfer_outgoing and not conn_status.is_working(project):
-        return not StalledRequest.objects.filter(status=StalledRequest.PENDING_DOWNSTREAM).count()
+        return not has_pending_outgoing(project)
 
     for allowance, state in matrix.items():
         if getattr(project, allowance, False) and getattr(request, state, False):
             return True
 
     return False
+
+def has_pending_outgoing(project):
+    from isafonda.models import StalledRequest
+    return StalledRequest.objects.filter(
+        project=project,
+        status=StalledRequest.PENDING_DOWNSTREAM).count()
