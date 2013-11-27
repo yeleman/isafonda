@@ -148,10 +148,15 @@ def external_events_handler(request, project_slug):
         return HttpResponse("Access Forbidden", status=403)
 
     if project.transfer_upstream:
+        if phone_number is not None:
+            params = {'phone_number': phone_number}
+        else:
+            params = {}
         try:
             req = requests.post(project.upstream_url,
                                 data=json.dumps(events),
-                                timeout=project.timeout)
+                                timeout=project.timeout,
+                                params=params)
             req.raise_for_status()
         except RequestException:
             failed_to_send = True
